@@ -3,8 +3,12 @@ package com.example.payroll.service.employee;
 import com.example.payroll.data.Dto.EmployeeDto;
 import com.example.payroll.data.model.Employee;
 import com.example.payroll.data.repository.EmployeeRepository;
+import com.example.payroll.service.util.EmployeeMapper;
+import com.example.payroll.service.util.EmployeeMapperImpl;
 import com.example.payroll.web.exceptions.EmployeeDoesNotExistException;
+import com.example.payroll.web.exceptions.EmployeeNotFoundException;
 import lombok.extern.slf4j.Slf4j;
+import org.mapstruct.factory.Mappers;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,15 +24,23 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Autowired
     EmployeeRepository employeeRepository;
 
+
+
     @Autowired
     ModelMapper modelMapper;
+
+    EmployeeMapper employeeMapper;
+
+    public EmployeeServiceImpl() {
+        employeeMapper = Mappers.getMapper(EmployeeMapper.class);
+    }
 
     @Override
     public Employee save(EmployeeDto employeeDto) {
 
         //Employye employee = modelMapper.map (employeeDto, Employee.class)
         Employee employee = new Employee();
-        modelMapper.map(employeeDto,Employee.class);
+        modelMapper.map(employeeDto, employee);
 
         log.info("Employee after mapping --> {}", employee);
 
@@ -36,10 +48,8 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
-    public Employee findById(Integer id) throws EmployeeDoesNotExistException {
-        if (id == null) throw new NullPointerException("Employee id cannot be null");
-        return employeeRepository.findById(id).orElseThrow(()-> new EmployeeDoesNotExistException("Employee with this id does not exist"));
-
+    public Employee findById(Integer id) {
+        return employeeRepository.findById(id).orElse(null);
     }
 
     @Override
@@ -57,8 +67,17 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
-    public Employee update(EmployeeDto employeeDto) {
-        return null;
+    public Employee update(EmployeeDto employeeDto, Integer id) throws EmployeeNotFoundException {
+        Employee employee = employeeRepository.findById(id).orElse(null);
+
+        if(employee == null){
+            throw new EmployeeNotFoundException("Employee not found");
+        }
+
+        employeeMapper.updateEmployeeFromDto(employeeDto,employee);
+        log.info("Employee after mapping --> {}", employee);
+
+        return employeeRepository.save(employee);
     }
 
 
