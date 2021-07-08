@@ -32,7 +32,6 @@ public class EmployeeController {
     private EmployeeService employeeService;
 
 
-
     @GetMapping()
     public ResponseEntity<?> findAll() {
         List<Employee> employees = employeeService
